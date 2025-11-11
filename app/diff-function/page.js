@@ -84,7 +84,7 @@ export default function DiffFunctionPage() {
       <div className="grid grid-cols-3 gap-1 mt-4">
           <div>
             <h3 className="text-lg font-semibold text-blue-700 mb-2">
-              Only in Environment A ({uniqueA.length})
+              Only in {envA?.name}   ({uniqueA.length})
             </h3>
             <ul className="border p-2 rounded h-[70vh] overflow-auto divide-y divide-gray-400 bg-white shadow-inner">
               {uniqueA.length ? (
@@ -110,7 +110,7 @@ export default function DiffFunctionPage() {
 
           <div>
             <h3 className="text-lg font-semibold text-blue-700 mb-2">
-              Only in Environment B ({uniqueB.length})
+              Only in {envB?.name} ({uniqueB.length})
             </h3>
             <ul className="border p-2 rounded h-[70vh] overflow-auto divide-y divide-gray-400 bg-white shadow-inner">
               {uniqueB.length ? (
