@@ -35,6 +35,75 @@ export default function AuditPage() {
     fetchLogs();
   }, [page, limit]);
 
+  function buildRollbackQuery(log) {
+    const beforeData = log.before_data ? JSON.parse(log.before_data) : null;
+    let sql = "";
+
+    if (log.operation_type === "INSERT") {
+      // Rollback INSERT → DELETE row
+      // Use executed_sql to extract table and PK if available
+      if (!beforeData && log.executed_sql) {
+        // crude way: assume INSERT INTO ... (cols) VALUES (...)
+        // we'll just turn it into DELETE using primary key if available
+        // safer: store the inserted PK in executed_sql or another field
+        sql = `DELETE FROM ${log.table_name} WHERE http_method_id = (SELECT http_method_id FROM (${log.executed_sql}) AS t)`;
+      } else if (beforeData) {
+        // fallback: if beforeData somehow exists (rare for insert)
+        sql = `DELETE FROM ${log.table_name} WHERE http_method_id = '${beforeData.http_method_id}'`;
+      } else {
+        throw new Error("No executed_sql available for INSERT rollback");
+      }
+    } else if (log.operation_type === "UPDATE") {
+      // Rollback UPDATE → restore old values
+      if (!beforeData) throw new Error("No before_data available for UPDATE rollback");
+
+      const cols = Object.keys(beforeData).filter((c) => c !== "http_method_id");
+      const setClause = cols
+        .map((c) => `${c} = ${beforeData[c] === null ? "NULL" : `'${beforeData[c]}'`}`)
+        .join(", ");
+      sql = `UPDATE ${log.table_name} SET ${setClause} WHERE http_method_id = '${beforeData.http_method_id}'`;
+    } else if (log.operation_type === "DELETE") {
+      // Rollback DELETE → reinsert old row
+      if (!beforeData) throw new Error("No before_data available for DELETE rollback");
+
+      const cols = Object.keys(beforeData);
+      const values = cols
+        .map((c) => (beforeData[c] === null ? "NULL" : `'${beforeData[c]}'`))
+        .join(", ");
+      sql = `INSERT INTO ${log.table_name} (${cols.join(", ")}) VALUES (${values})`;
+    }
+
+    return sql;
+  }
+
+  const handleRollback = async (log) => {
+    if (!confirm("Are you sure you want to rollback this operation?")) return;
+
+    try {
+      // 1. Build rollback SQL on frontend
+      const rollbackSql = buildRollbackQuery(log);
+
+      // 2. Call API to execute in target DB
+      const res = await fetch(`/api/audit/${log.id}/rollback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          environmentId: log.environment_id, // use to select DB (MySQL/Postgres, UAT/PROD, etc.)
+          sql: rollbackSql,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to rollback");
+
+      const result = await res.json();
+      alert(result.message || "Rollback successful");
+      router.refresh();
+    } catch (err) {
+      console.error("Rollback error:", err);
+      alert("Rollback failed. Please check logs or try again.");
+    }
+  };
+
   return (
     <div className="font-sans">
       <TopNav title="Audit Logs" />
@@ -56,6 +125,7 @@ export default function AuditPage() {
                 <th className="px-2 py-2 border">Executed SQL</th>
                 <th className="px-2 py-2 border">Executed By</th>
                 <th className="px-2 py-2 border">Executed At</th>
+                <th className="px-2 py-2 border">Rollback</th>
               </tr>
             </thead>
             <tbody>
@@ -79,6 +149,11 @@ export default function AuditPage() {
                   <td className="px-2 py-2 border">{log.executed_by}</td>
                   <td className="px-2 py-2 border">
                     {new Date(log.executed_at).toLocaleString()}
+                  </td>
+                  <td className="px-2 py-2 border text-center"> 
+                    <button
+                      className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600" onClick={() => handleRollback(log)}
+                      >Rollback</button>
                   </td>
                 </tr>
               ))}

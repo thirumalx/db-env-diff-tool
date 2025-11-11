@@ -320,10 +320,13 @@ export default function SelectTablePage() {
             sql: modifiedSQL,
             tableName: selectedTable,
             operationType: selectedDiff?.type,
+            pkValues: selectedDiff?.pkValues || {}, 
             beforeData:
-              selectedDiff?.type === "INSERT"
-                ? selectedDiff?.row
-                : selectedDiff?.oldRow || {},
+              selectedDiff?.type === "UPDATE"
+                ? selectedDiff?.oldRow || {}
+                : selectedDiff?.type === "DELETE"
+                  ? selectedDiff?.row || {}
+                  : {}, // for INSERT, keep it empty
             env: envB.name,
            }),
         });
