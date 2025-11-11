@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Diff Tool",
-  description: "Diff Tool for Database Comparison",
+  title: "DB Env Diff Tool",
+  description: "DB environment diff Tool for Comparison",
 };
 
 export default function RootLayout({ children }) {

@@ -75,6 +75,19 @@ export default function Home() {
     router.push(`/diff-db`);
   };
 
+  const handleGetFunctions = async () => {
+    const newPayload = { dbType, envA, envB };
+    setPayload(newPayload); // Store in context
+    console.log("Payload is ", newPayload);
+    // Save to SQLite
+    await fetch("/api/environment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newPayload),
+    });
+    router.push(`/diff-function`);
+  };
+
   //Keep context live-updated
   useEffect(() => {
      setPayload({ dbType, envA, envB });
@@ -197,7 +210,18 @@ export default function Home() {
           {renderEnvInputs(envB, setEnvB, "envB")}
         </div>
       </div>
-      <div className="flex justify-end mt-2">
+      <div className="flex justify-end mt-2 gap-3">
+         <button 
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          onClick={() => {
+            console.log("Selected DB Type:", dbType);
+            console.log("Env A:", envA);
+            console.log("Env B:", envB);
+            handleGetFunctions();
+          }}
+        >
+        Display Functions
+        </button>
         <button 
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           onClick={() => {
