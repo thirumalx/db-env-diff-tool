@@ -7,13 +7,15 @@ import TopNav from "../components/TopNav";
 export default function DiffFunctionPage() {
   const { payload } = useDb(); // ✅ from context
   const { dbType, envA, envB } = payload || {};
-  const [functionsA, setFunctionsA] = useState([]);
-  const [functionsB, setFunctionsB] = useState([]);
   const [commonFunctions, setCommonFunctions] = useState([]);
   const [uniqueA, setUniqueA] = useState([]);
   const [uniqueB, setUniqueB] = useState([]);
   const [loading, setLoading] = useState(true);
   const [connectionError, setConnectionError] = useState(null);
+  // For highlighting selected function
+  const [selectedFunction, setSelectedFunction] = useState(null);
+  const [diffData, setDiffData] = useState({ envA: "", envB: "" });
+  const [diffLoading, setDiffLoading] = useState(false);
 
   useEffect(() => {
     if (!payload) return;
@@ -49,9 +51,6 @@ export default function DiffFunctionPage() {
         const funcNamesB =
           dataB.data?.map((f) => f.ROUTINE_NAME || f.routine_name) || [];
 
-        setFunctionsA(funcNamesA);
-        setFunctionsB(funcNamesB);
-
         const common = funcNamesA.filter((name) => funcNamesB.includes(name));
 
         const onlyInA = funcNamesA.filter((name) => !funcNamesB.includes(name));
@@ -69,6 +68,10 @@ export default function DiffFunctionPage() {
     }
     fetchFunctions();
   }, [payload]);
+
+  async function handleCompare(fnName) {
+    console.log("Comparing function:", fnName);
+  }
 
   if (!payload)
     return <p className="p-4 text-gray-600">No environment selected.</p>;
@@ -101,7 +104,16 @@ export default function DiffFunctionPage() {
             </h3>
             <ul className="border p-2 rounded h-[70vh] overflow-auto divide-y divide-green-400 bg-white shadow-inner">
               {commonFunctions.length ? (
-                commonFunctions.map((f) => <li key={f} className="py-2 px-2 hover:bg-blue-50 transition-colors cursor-default">{f}</li>)
+                commonFunctions.map((f) => 
+                <li 
+                key={f} 
+                className={`py-2 px-2 cursor-pointer transition-colors ${
+                    selectedFunction === f ? "bg-green-100" : "hover:bg-green-50"
+                }`}
+                onClick={() => handleCompare(f)}
+                >
+                    {f}
+                </li>)
               ) : (
                 <p className="text-center text-gray-500 mt-4">None</p>
               )}
