@@ -72,6 +72,19 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newPayload),
     });
+    router.push(`/diff-table`);
+  };
+
+  const handleGetData = async () => {
+    const newPayload = { dbType, envA, envB };
+    setPayload(newPayload); // Store in context
+    console.log("Payload is ", newPayload);
+    // Save to SQLite
+    await fetch("/api/environment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newPayload),
+    });
     router.push(`/diff-db`);
   };
 
@@ -220,7 +233,18 @@ export default function Home() {
             handleGetFunctions();
           }}
         >
-        Display Functions
+        Diff Functions
+        </button>
+        <button 
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          onClick={() => {
+            console.log("Selected DB Type:", dbType);
+            console.log("Env A:", envA);
+            console.log("Env B:", envB);
+            handleGetData();
+          }}
+        >
+        Diff Data
         </button>
         <button 
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -231,7 +255,7 @@ export default function Home() {
             handleGetTables();
           }}
         >
-        Display Tables
+        Diff Table
         </button>
       </div>
    </div>
