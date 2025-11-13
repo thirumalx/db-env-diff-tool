@@ -17,6 +17,12 @@ export default function DiffTablePage() {
   const [diffLoading, setDiffLoading] = useState(false);
   const [definitionA, setDefinitionA] = useState("");
   const [definitionB, setDefinitionB] = useState("");
+  //
+  const [viewOnlyEnv, setViewOnlyEnv] = useState(null);
+  const [viewOnlyTable, setViewOnlyTable] = useState(null);
+  const [viewOnlyDefinition, setViewOnlyDefinition] = useState("");
+  const [viewOnlyLoading, setViewOnlyLoading] = useState(false);
+
 
 
   useEffect(() => {
@@ -105,6 +111,28 @@ export default function DiffTablePage() {
     }
   }
 
+  async function handleViewOnly(tableName, env, label) {
+    setViewOnlyTable(tableName);
+    setViewOnlyEnv(label);
+    setViewOnlyLoading(true);
+
+    try {
+      const res = await fetch("/api/get-table-definition", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dbType, ...env, tableName }),
+      });
+
+      const data = await res.json();
+      setViewOnlyDefinition(data.data || "No definition found");
+    } catch (e) {
+      console.error("Error fetching table definition:", e);
+      setViewOnlyDefinition("❌ Failed to load definition.");
+    } finally {
+      setViewOnlyLoading(false);
+    }
+  }
+
   if (!payload)
     return <p className="p-4 text-gray-600">No environment selected.</p>;
 
@@ -169,10 +197,45 @@ export default function DiffTablePage() {
             </div>
           </div>
         )}
+        {/* View-Only Modal */}
+        {viewOnlyTable && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-xl shadow-2xl w-[90%] h-[80%] overflow-auto relative">
+              <button
+                onClick={() => {
+                  setViewOnlyTable(null);
+                  setViewOnlyEnv(null);
+                  setViewOnlyDefinition("");
+                }}
+                className="absolute top-3 right-3 text-gray-600 hover:text-black text-lg"
+              >
+                ✕
+              </button>
+
+              <h2 className="text-xl font-semibold mb-4 text-center">
+                Table Definition: <span className="text-blue-700">{viewOnlyTable}</span>
+              </h2>
+
+              {viewOnlyLoading ? (
+                <p className="text-center text-gray-500">Loading definition...</p>
+              ) : (
+                <div className="border rounded p-3 bg-gray-50 overflow-auto h-[70vh]">
+                  <h3 className="font-semibold text-blue-700 mb-3 text-center">
+                    {viewOnlyEnv} Definition
+                  </h3>
+                  <pre className="text-sm whitespace-pre-wrap text-gray-800">
+                    {viewOnlyDefinition}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
 
         {/* Lists */}
         <div className="grid grid-cols-3 gap-1 mt-4 text-sm">
-          <DiffColumn title={`Only in ${envA?.name} (${uniqueA.length})`} color="blue" items={uniqueA} />
+          <DiffColumn title={`Only in ${envA?.name} (${uniqueA.length})`} color="blue" items={uniqueA}  onClick={(table) => handleViewOnly(table, envA, envA?.name)}/>
           <DiffColumn
             title={`Common Tables (${commonTables.length})`}
             color="green"
@@ -180,7 +243,7 @@ export default function DiffTablePage() {
             onClick={handleCompare}
             selected={selectedTable}
           />
-          <DiffColumn title={`Only in ${envB?.name} (${uniqueB.length})`} color="blue" items={uniqueB} />
+          <DiffColumn title={`Only in ${envB?.name} (${uniqueB.length})`} color="blue" items={uniqueB} onClick={(table) => handleViewOnly(table, envB, envB?.name)}/>
         </div>
       </>
     );

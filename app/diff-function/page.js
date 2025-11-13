@@ -17,7 +17,11 @@ export default function DiffFunctionPage() {
   const [diffLoading, setDiffLoading] = useState(false);
   const [definitionA, setDefinitionA] = useState("");
   const [definitionB, setDefinitionB] = useState("");
-
+  //
+  const [viewOnlyEnv, setViewOnlyEnv] = useState(null);
+  const [viewOnlyFun, setViewOnlyFun] = useState(null);
+  const [viewOnlyDefinition, setViewOnlyDefinition] = useState("");
+  const [viewOnlyLoading, setViewOnlyLoading] = useState(false);
 
   useEffect(() => {
     if (!payload) return;
@@ -117,6 +121,29 @@ export default function DiffFunctionPage() {
     }
   }
 
+  async function handleViewOnly(fnName, env, label) {
+    setViewOnlyFun(fnName);
+    setViewOnlyEnv(label);
+    setViewOnlyLoading(true);
+    const [schema, routineName] = fnName.includes(".")
+        ? fnName.split(".")
+        : [null, fnName];
+    try {
+      const res = await fetch("/api/compare-function", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dbType, ...env, schema, routineName }),
+        });
+      const data = await res.json();
+      setViewOnlyDefinition(data.data || "No definition found");
+    } catch (e) {
+      console.error("Error fetching function definition:", e);
+      setViewOnlyDefinition("❌ Failed to load definition.");
+    } finally {
+      setViewOnlyLoading(false);
+    }
+  }
+
   if (!payload)
     return <p className="p-4 text-gray-600">No environment selected.</p>;
 
@@ -181,10 +208,44 @@ export default function DiffFunctionPage() {
             </div>
           </div>
         )}
+        {/* View-Only Modal */}
+        {viewOnlyFun && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-xl shadow-2xl w-[90%] h-[80%] overflow-auto relative">
+              <button
+                onClick={() => {
+                  setViewOnlyFun(null);
+                  setViewOnlyEnv(null);
+                  setViewOnlyDefinition("");
+                }}
+                className="absolute top-3 right-3 text-gray-600 hover:text-black text-lg"
+              >
+                ✕
+              </button>
+
+              <h2 className="text-xl font-semibold mb-4 text-center">
+                Function Definition: <span className="text-blue-700">{viewOnlyFun}</span>
+              </h2>
+
+              {viewOnlyLoading ? (
+                <p className="text-center text-gray-500">Loading definition...</p>
+              ) : (
+                <div className="border rounded p-3 bg-gray-50 overflow-auto h-[70vh]">
+                  <h3 className="font-semibold text-blue-700 mb-3 text-center">
+                    {viewOnlyEnv} Definition
+                  </h3>
+                  <pre className="text-sm whitespace-pre-wrap text-gray-800">
+                    {viewOnlyDefinition}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Lists */}
         <div className="grid grid-cols-3 gap-1 mt-4 text-sm">
-          <DiffColumn title={`Only in ${envA?.name} (${uniqueA.length})`} color="blue" items={uniqueA} />
+          <DiffColumn title={`Only in ${envA?.name} (${uniqueA.length})`} color="blue" items={uniqueA}  onClick={(fnName) => handleViewOnly(fnName, envA, envA?.name)}/>
           <DiffColumn
             title={`Common Functions (${commonFunctions.length})`}
             color="green"
@@ -192,7 +253,7 @@ export default function DiffFunctionPage() {
             onClick={handleCompare}
             selected={selectedFunction}
           />
-          <DiffColumn title={`Only in ${envB?.name} (${uniqueB.length})`} color="blue" items={uniqueB} />
+          <DiffColumn title={`Only in ${envB?.name} (${uniqueB.length})`} color="blue" items={uniqueB} onClick={(fnName) => handleViewOnly(fnName, envB, envB?.name)} />
         </div>
       </>
     );
