@@ -1,14 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useDb } from "../context/DbContext";
 import TopNav from "../components/TopNav";
-import { Diff, Hunk, parseDiff } from "react-diff-view";
-import "react-diff-view/style/index.css"; // Required default styles
-
-import Prism from "prismjs";
-import "prismjs/themes/prism.css";
-import "prismjs/components/prism-sql"
+import DiffMatchPatch from "diff-match-patch";
 
 export default function DiffFunctionPage() {
   const { payload } = useDb(); // ✅ from context
@@ -19,7 +14,6 @@ export default function DiffFunctionPage() {
   const [loading, setLoading] = useState(true);
   const [connectionError, setConnectionError] = useState(null);
   const [selectedFunction, setSelectedFunction] = useState(null);
-  const [diffText, setDiffText] = useState(""); // unified diff text
   const [diffLoading, setDiffLoading] = useState(false);
   const [definitionA, setDefinitionA] = useState("");
   const [definitionB, setDefinitionB] = useState("");
@@ -115,11 +109,6 @@ export default function DiffFunctionPage() {
       setDefinitionA(definitionA);
       setDefinitionB(definitionB);
 
-      // Create a unified diff text
-      const unifiedDiff = generateUnifiedDiff(definitionA, definitionB, fnName, envA.name, envB.name);
-      setDiffText(unifiedDiff);
-
-
     } catch (e) {
       console.error("Compare failed:", e);
       setDiffText("❌ Error fetching function definitions.");
@@ -127,24 +116,6 @@ export default function DiffFunctionPage() {
       setDiffLoading(false);
     }
   }
-
-  // Simple unified diff generator
-function generateUnifiedDiff(a, b, fnName, envA, envB) {
-  const DiffLib = require("diff");
-
-  // If definitions are the same (ignoring whitespace differences)
-  if (a.trim() === b.trim()) {
-    return `diff --git a/${fnName} b/${fnName}
-    --- a/${envA}
-    +++ b/${envB}
-    @@ -0,0 +0,0 @@
-    No difference found`;
-  }
-  // Let diff library produce valid unified diff (don't slice headers)
-  return DiffLib.createTwoFilesPatch(envA, envB, a, b, "", "");
-}
-
-
 
   if (!payload)
     return <p className="p-4 text-gray-600">No environment selected.</p>;
@@ -202,7 +173,7 @@ function generateUnifiedDiff(a, b, fnName, envA, envB) {
                       <h3 className="font-semibold text-purple-700 mb-3 text-center">
                         Diff View
                       </h3>
-                      <DiffView diffText={diffText} />
+                      <DiffView definitionA={definitionA} definitionB={definitionB} />
                     </div>
                   </>
                 )}
@@ -235,43 +206,36 @@ function generateUnifiedDiff(a, b, fnName, envA, envB) {
   );
 }
 
-/** Renders a diff using react-diff-view */
-function DiffView({ diffText }) {
-  const [files, setFiles] = useState([]);
+function DiffView({ definitionA, definitionB }) {
+  const ref = useRef(null);
 
   useEffect(() => {
-    if (!diffText) return;
+    if (!definitionA || !definitionB) return;
 
-    try {
-      const parsed = parseDiff(diffText);
-      setFiles(parsed);
-    } catch (err) {
-      console.warn("parseDiff failed:", err);
-      setFiles([]);
+    const cleanA = definitionA.trim().replace(/\r\n|\r|\n/g, "\n");
+    const cleanB = definitionB.trim().replace(/\r\n|\r|\n/g, "\n");
+
+    if (cleanA === cleanB) {
+      ref.current.innerHTML =
+        '<div class="p-4 text-green-700 bg-green-50 rounded text-center">✅ No difference found between environments.</div>';
+      return;
     }
 
-    Prism.highlightAll();
-  }, [diffText]);
+    const dmp = new DiffMatchPatch();
+    const diffs = dmp.diff_main(cleanA, cleanB);
+    dmp.diff_cleanupSemantic(diffs);
 
-  // Explicit check for "No difference found"
-  if (diffText.includes("No difference found")) {
-    return (
-      <pre className="bg-green-50 text-green-700 p-4 rounded text-center whitespace-pre-wrap">
-        ✅ No difference found between environments.
-      </pre>
-    );
-  }
+    const html = dmp.diff_prettyHtml(diffs);
+    ref.current.innerHTML = html;
+  }, [definitionA, definitionB]);
 
-  // If no parsed hunks, show fallback
-  if (!files.length) {
-    return (
-      <pre className="bg-gray-50 text-gray-700 p-4 rounded overflow-auto whitespace-pre-wrap">
-        ⚠️ Unable to generate diff. Check definitions.
-      </pre>
-    );
-  }
+  return (
+    <pre
+      ref={ref}
+      className="p-4 rounded overflow-auto whitespace-pre-wrap text-sm bg-gray-50 border"
+    />
+  );
 }
-
 
 
 

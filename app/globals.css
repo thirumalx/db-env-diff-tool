@@ -31,3 +31,13 @@ body {
   height: 100%;
   background-color: #c02d39; /* your desired bg */
 }
+
+ins {
+  background-color: #d1fae5; /* green-100 */
+  text-decoration: none;
+}
+
+del {
+  background-color: #fee2e2; /* red-100 */
+  text-decoration: line-through;
+}

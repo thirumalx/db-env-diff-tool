@@ -200,9 +200,17 @@ function DiffView({ definitionA, definitionB }) {
   useEffect(() => {
     if (!definitionA || !definitionB) return;
 
-    const dmp = new DiffMatchPatch();
+    const cleanA = definitionA.trim().replace(/\r\n|\r|\n/g, "\n");
+    const cleanB = definitionB.trim().replace(/\r\n|\r|\n/g, "\n");
 
-    const diffs = dmp.diff_main(definitionA, definitionB);
+    if (cleanA === cleanB) {
+      ref.current.innerHTML =
+        '<div class="p-4 text-green-700 bg-green-50 rounded text-center">✅ No difference found between environments.</div>';
+      return;
+    }
+
+    const dmp = new DiffMatchPatch();
+    const diffs = dmp.diff_main(cleanA, cleanB);
     dmp.diff_cleanupSemantic(diffs);
 
     const html = dmp.diff_prettyHtml(diffs);
@@ -216,6 +224,7 @@ function DiffView({ definitionA, definitionB }) {
     />
   );
 }
+
 
 
 /** Small reusable column component */
