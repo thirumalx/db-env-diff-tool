@@ -21,6 +21,7 @@
     "ace-builds": "^1.43.2",
     "bcryptjs": "^3.0.2",
     "diff": "^8.0.2",
+    "diff-match-patch": "^1.0.5",
     "framer-motion": "^12.23.12",
     "jose": "^6.0.13",
     "jsonwebtoken": "^9.0.2",

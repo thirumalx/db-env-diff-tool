@@ -1,14 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef  } from "react";
 import { useDb } from "../context/DbContext";
 import TopNav from "../components/TopNav";
-import { Diff, Hunk, parseDiff } from "react-diff-view";
-import "react-diff-view/style/index.css"; // Required default styles
-
-import Prism from "prismjs";
-import "prismjs/themes/prism.css";
-import "prismjs/components/prism-sql"
+import DiffMatchPatch from "diff-match-patch";
 
 export default function DiffTablePage() {
   const { payload } = useDb(); // ✅ from context
@@ -19,7 +14,6 @@ export default function DiffTablePage() {
   const [loading, setLoading] = useState(true);
   const [connectionError, setConnectionError] = useState(null);
   const [selectedTable, setSelectedTable] = useState(null);
-  const [diffText, setDiffText] = useState(""); // unified diff text
   const [diffLoading, setDiffLoading] = useState(false);
   const [definitionA, setDefinitionA] = useState("");
   const [definitionB, setDefinitionB] = useState("");
@@ -45,14 +39,15 @@ export default function DiffTablePage() {
             body: JSON.stringify({ dbType, ...envB }),
           }),
         ]);
-
         const dataA = await resA.json();
         const dataB = await resB.json();
 
-        const tableNamesInA =
-          dataA.data?.map((f) => f.database_name + "." + f.table_name);
-        const tableNamesInB =
-          dataB.data?.map((f) => f.database_name + "." + f.table_name);
+        // ✅ Ensure both are arrays
+        const tablesA = Array.isArray(dataA.data) ? dataA.data : [];
+        const tablesB = Array.isArray(dataB.data) ? dataB.data : [];
+
+        const tableNamesInA = tablesA.map((f) => `${f.database_name}.${f.table_name}`);
+        const tableNamesInB = tablesB.map((f) => `${f.database_name}.${f.table_name}`);
 
         const common = tableNamesInA.filter((name) => tableNamesInB.includes(name));
         const onlyInA = tableNamesInA.filter((name) => !tableNamesInB.includes(name));
@@ -61,6 +56,7 @@ export default function DiffTablePage() {
         setUniqueA(onlyInA);
         setUniqueB(onlyInB);
         setCommonTables(common);
+
       } catch (err) {
         console.error("Error loading functions:", err);
         setConnectionError("Failed to connect or fetch function data");
@@ -101,11 +97,6 @@ export default function DiffTablePage() {
         console.log("Table definitions are: ", { definitionA, definitionB });
         setDefinitionA(definitionA);
         setDefinitionB(definitionB);
-
-        // Create a unified diff text
-        const unifiedDiff = generateUnifiedDiff(definitionA, definitionB, tableName, envA.name, envB.name);
-        console.log("Generated unified diff:", unifiedDiff);
-        setDiffText(unifiedDiff);
     } catch (e) {
       console.error("Compare failed:", e);
       setDiffText("❌ Error fetching function definitions.");
@@ -113,24 +104,6 @@ export default function DiffTablePage() {
       setDiffLoading(false);
     }
   }
-
-  // Simple unified diff generator
-function generateUnifiedDiff(a, b, tableName, envA, envB) {
-  const DiffLib = require("diff");
-
-  // If definitions are the same (ignoring whitespace differences)
-  if (a.trim() === b.trim()) {
-    return `diff --git a/${tableName} b/${tableName}
-    --- a/${envA}
-    +++ b/${envB}
-    @@ -0,0 +0,0 @@
-    No difference found`;
-  }
-  // Let diff library produce valid unified diff (don't slice headers)
-  return DiffLib.createTwoFilesPatch(envA, envB, a, b, "", "");
-}
-
-
 
   if (!payload)
     return <p className="p-4 text-gray-600">No environment selected.</p>;
@@ -188,7 +161,7 @@ function generateUnifiedDiff(a, b, tableName, envA, envB) {
                       <h3 className="font-semibold text-purple-700 mb-3 text-center">
                         Diff View
                       </h3>
-                      <DiffView diffText={diffText} />
+                      <DiffView definitionA={definitionA} definitionB={definitionB} />
                     </div>
                   </>
                 )}
@@ -221,44 +194,28 @@ function generateUnifiedDiff(a, b, tableName, envA, envB) {
   );
 }
 
-/** Renders a diff using react-diff-view */
-function DiffView({ diffText }) {
-  const [files, setFiles] = useState([]);
+function DiffView({ definitionA, definitionB }) {
+  const ref = useRef(null);
 
   useEffect(() => {
-    if (!diffText) return;
+    if (!definitionA || !definitionB) return;
 
-    try {
-      const parsed = parseDiff(diffText);
-      setFiles(parsed);
-    } catch (err) {
-      console.warn("parseDiff failed:", err);
-      setFiles([]);
-    }
+    const dmp = new DiffMatchPatch();
 
-    Prism.highlightAll();
-  }, [diffText]);
+    const diffs = dmp.diff_main(definitionA, definitionB);
+    dmp.diff_cleanupSemantic(diffs);
 
-  // Explicit check for "No difference found"
-  if (diffText.includes("No difference found")) {
-    return (
-      <pre className="bg-green-50 text-green-700 p-4 rounded text-center whitespace-pre-wrap">
-        ✅ No difference found between environments.
-      </pre>
-    );
-  }
+    const html = dmp.diff_prettyHtml(diffs);
+    ref.current.innerHTML = html;
+  }, [definitionA, definitionB]);
 
-  // If no parsed hunks, show fallback
-  if (!files.length) {
-    return (
-      <pre className="bg-gray-50 text-gray-700 p-4 rounded overflow-auto whitespace-pre-wrap">
-        ⚠️ Unable to generate diff. Check definitions.
-      </pre>
-    );
-  }
+  return (
+    <pre
+      ref={ref}
+      className="p-4 rounded overflow-auto whitespace-pre-wrap text-sm bg-gray-50 border"
+    />
+  );
 }
-
-
 
 
 /** Small reusable column component */
