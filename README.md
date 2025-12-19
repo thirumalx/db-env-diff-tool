@@ -126,6 +126,16 @@ docker compose --profile dev up --build
 * Runs `npm run dev`
 
 #### Production
+
+##### Build and Deploy with PM2
+
+```bash
+npm run build
+npm run pm2:start
+```
+Note: PM2 is a production process manager for Node.js applications., If more than one application is running on the same server, start with app name `npm run pm2:start --name "app-name"`
+
+##### Deploy with Docker
 ```
 DOCKERFILE=Dockerfile CODE_MOUNT=/app START_CMD="npm start" NODE_ENV=production docker compose --profile prod up --build
 ```

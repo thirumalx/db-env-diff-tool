@@ -10,12 +10,17 @@
   "scripts": {
     "dev": "next dev --turbopack -p 2214",
     "build": "next build",
-    "start": "next start",
+    "start": "next start  -p 2214",
     "lint": "next lint",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d out",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "pm2:start": "pm2 start npm --name db-env-diff-tool -- start",
+    "pm2:stop": "pm2 stop db-env-diff-tool",
+    "pm2:restart": "pm2 restart db-env-diff-tool",
+    "pm2:logs": "pm2 logs db-env-diff-tool",
+    "pm2:delete": "pm2 delete db-env-diff-tool"
   },
   "dependencies": {
     "ace-builds": "^1.43.2",
@@ -44,6 +49,7 @@
     "@tauri-apps/cli": "^2.8.1",
     "autoprefixer": "^10.4.21",
     "gh-pages": "^6.3.0",
+    "pm2": "^6.0.14",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.11"
   }
