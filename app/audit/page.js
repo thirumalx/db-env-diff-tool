@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import TopNav from "../components/TopNav";
 import Pagination from "../components/Pagination";
 import ExpandableCell from "../components/ExpandableCell";
 
 export default function AuditPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AuditContent />
+    </Suspense>
+  );
+}
+
+function AuditContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
