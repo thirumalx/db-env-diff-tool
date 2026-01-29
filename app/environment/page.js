@@ -179,7 +179,7 @@ export default function Home() {
               <option
                 key={env.id}
                 value={env.name}
-                disabled={envB?.name === env.name} // disable if EnvB already selected
+                disabled={dbType === "PostgreSQL" && envB?.name === env.name} // disable if EnvB already selected (PostgreSQL only)
               >
                 {env.name}
               </option>
@@ -213,7 +213,7 @@ export default function Home() {
               <option
                 key={env.id}
                 value={env.name}
-                disabled={envA?.name === env.name} // disable if EnvA already selected
+                disabled={dbType === "PostgreSQL" && envA?.name === env.name} // disable if EnvA already selected (PostgreSQL only)
               >
                 {env.name}
               </option>
