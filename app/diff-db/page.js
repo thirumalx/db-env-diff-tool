@@ -25,6 +25,9 @@ export default function SelectTablePage() {
   const [columns, setColumns] = useState([]);
   // Key Column
   const [selectedKeyColumn, setSelectedKeyColumn] = useState("");
+  // Where clause
+  const [whereColumn, setWhereColumn] = useState("");
+  const [whereValue, setWhereValue] = useState("");
   // Compare Columns
   const [selectedColumns, setSelectedColumns] = useState([]);
   const [loadingCols, setLoadingCols] = useState(false);
@@ -143,12 +146,12 @@ export default function SelectTablePage() {
         fetch("/api/get-row-diff", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dbType, ...envA, table: selectedTable }),
+          body: JSON.stringify({ dbType, ...envA, table: selectedTable, whereColumn, whereValue }),
         }),
         fetch("/api/get-row-diff", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dbType, ...envB, table: selectedTable }),
+          body: JSON.stringify({ dbType, ...envB, table: selectedTable, whereColumn, whereValue }),
         }),
       ]);
 
@@ -226,7 +229,7 @@ export default function SelectTablePage() {
 
   useEffect(() => {
     fetchDiffs();
-  }, [selectedColumns, selectedTable, primaryKeys, selectedKeyColumn]);
+  }, [selectedColumns, selectedTable, primaryKeys, selectedKeyColumn, whereColumn, whereValue]);
 
   function generateSQL(diff) {
     if (!diff || (!diff.row && !diff.oldRow)) return "";
@@ -443,11 +446,11 @@ return (
         <div className="flex items-center gap-2">
           <label htmlFor="columnKeySelect" className="font-medium">
           Key Column:</label>
-        <select
+          <select
             id="columnKeySelect"
             className="border px-2 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white dark:border-gray-600"
             value={selectedKeyColumn}
-            onChange={(e) => setSelectedKeyColumn([e.target.value])}
+            onChange={(e) => setSelectedKeyColumn(e.target.value)}
           >
             <option value="">-- Select Key Column --</option>
             {columns.map((col) => (
@@ -475,6 +478,30 @@ return (
               onChange={setSelectedColumns}
             />
           )}
+        </div>
+
+        {/* Where clause: select column + value */}
+        <div className="flex items-center gap-2">
+          <label htmlFor="whereColumn" className="font-medium">Where:</label>
+          <select
+            id="whereColumn"
+            className="border px-2 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white dark:border-gray-600"
+            value={whereColumn}
+            onChange={(e) => setWhereColumn(e.target.value)}
+          >
+            <option value="">-- Column --</option>
+            {columns.map((col) => (
+              <option key={col} value={col}>{col}</option>
+            ))}
+          </select>
+
+          <input
+            id="whereValue"
+            placeholder="Value"
+            value={whereValue}
+            onChange={(e) => setWhereValue(e.target.value)}
+            className="border px-2 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white dark:border-gray-600"
+          />
         </div>
 
         {/* 🔹 Refresh Button */}
