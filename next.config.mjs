@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     //devIndicators: false
-    //output: 'export',
+    output: 'standalone',
     images: {
         unoptimized: true
     }

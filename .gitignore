@@ -47,3 +47,7 @@ next-env.d.ts
 *.db
 *.sqlite
 *.sqlite3
+#
+portable-app/
+# 
+DB
