@@ -426,13 +426,13 @@ return (
   ) : (
     <>
       {/* 🔹 Filter with dropdowns and buttons */}
-      <div className="mb-4 flex items-center gap-6 sticky top-0 z-30 bg-white dark:bg-gray-900  h-12 px-2 shadow">
+      <div className="mb-4 flex items-center gap-2 sticky top-0 z-30 bg-white dark:bg-gray-900  h-11 px-1 shadow">
         {/* Table Dropdown */}
         <div>
-          <label htmlFor="tableSelect" className="font-medium mr-2">Table:</label>
+          <label htmlFor="tableSelect" className="font-small mr-2">Table:</label>
           <select
             id="tableSelect"
-            className="border px-2 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white dark:border-gray-600"
+            className="border px-1 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white dark:border-gray-600"
             value={selectedTable}
             onChange={(e) => setSelectedTable(e.target.value)}
           >
@@ -443,12 +443,12 @@ return (
         </div>
 
         {/* Column Dropdown for key */}
-        <div className="flex items-center gap-2">
-          <label htmlFor="columnKeySelect" className="font-medium">
+        <div className="flex items-center gap-1">
+          <label htmlFor="columnKeySelect" className="font-small">
           Key Column:</label>
           <select
             id="columnKeySelect"
-            className="border px-2 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white dark:border-gray-600"
+            className="border px-1 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white dark:border-gray-600"
             value={selectedKeyColumn}
             onChange={(e) => setSelectedKeyColumn(e.target.value)}
           >
@@ -463,9 +463,9 @@ return (
         </div>
 
         {/* Column Dropdown */}
-        <div className="flex items-center gap-2 relative z-50 overflow-visible">
-          <label htmlFor="columnSelect" className="font-medium">
-            Compare Column (Optional):
+        <div className="flex items-center gap-1 relative z-50 overflow-visible">
+          <label htmlFor="columnSelect" className="font-small">
+            Compare Column(Optional):
           </label>
           {loadingCols ? (
             <span>Loading...</span>
@@ -481,11 +481,11 @@ return (
         </div>
 
         {/* Where clause: select column + value */}
-        <div className="flex items-center gap-2">
-          <label htmlFor="whereColumn" className="font-medium">Where:</label>
+        <div className="flex items-center gap-1">
+          <label htmlFor="whereColumn" className="font-small">Where:</label>
           <select
             id="whereColumn"
-            className="border px-2 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white dark:border-gray-600"
+            className="border px-1 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white dark:border-gray-600"
             value={whereColumn}
             onChange={(e) => setWhereColumn(e.target.value)}
           >
@@ -497,10 +497,11 @@ return (
 
           <input
             id="whereValue"
+            size={5}
             placeholder="Value"
             value={whereValue}
             onChange={(e) => setWhereValue(e.target.value)}
-            className="border px-2 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white dark:border-gray-600"
+            className="border px-1 py-1 rounded bg-white text-black dark:bg-gray-800 dark:text-white dark:border-gray-600"
           />
         </div>
 
@@ -521,7 +522,7 @@ return (
           type="button"
           onClick={openBulkModal}
           title="Bulk Execute"
-          className="flex items-center gap-1 bg-purple-600 hover:bg-purple-500 text-white px-3 py-1 rounded"
+          className="flex items-center gap-1 bg-purple-600 hover:bg-purple-500 text-white px-1 py-1 rounded"
         >
           <span>Bulk Execute</span>
         </button>
